@@ -16,6 +16,22 @@ httpInstance.interceptors.request.use(config => {
 httpInstance.interceptors.response.use(res => res.data, e => {
   return Promise.reject(e)
 })
-
-
+/**
+ * @description: 获取新鲜好物
+ * @param {*}
+ * @return {*}
+ */
+export const findNewAPI = () => {
+  return httpInstance({
+    url:'/home/new'
+  })
+}
+/**
+ * @description: 获取人气推荐
+ * @param {*}
+ * @return {*}
+ */
+export const getHotAPI = () => {
+  return  httpInstance('home/hot', 'get', {})
+}
 export default httpInstance
