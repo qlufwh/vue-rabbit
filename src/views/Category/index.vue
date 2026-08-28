@@ -1,132 +1,97 @@
-```vue
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted } from "vue";
+import { getBannerAPI } from "@/apis/home";
+import { useRoute, onBeforeRouteUpdate } from "vue-router";
+import { getTopCategoryAPI } from "@/apis/category";
+import GoodsItem from "../Home/components/GoodsItem.vue";
+const categoryData = ref({});
+// 这里可以获取路由的参数，这里还没引入，注意一下
+const route = useRoute();
+// 这里是给id付了一个初始值，是一种高级的写法，如果
+const getCategory = async (id = route.params.id) => {
+  // 如何在setup中获取路由参数 useRoute() -> route 等价于this.$route
+  const res = await getTopCategoryAPI(id);
+  categoryData.value = res.result;
+};
+// 获取banner
+const bannerList = ref([]);
 
-import { getTopCategoryAPI } from '@/apis/category'
-import { getBannerAPI } from '@/apis/home'
-
-import GoodsItem from '../Home/components/Goodsitem.vue'
-
-// 获取路由参数
-const route = useRoute()
-
-// 分类数据
-const categoryData = ref({})
-
-// Banner 数据
-const bannerList = ref([])
-
-// 获取 Banner
 const getBanner = async () => {
   const res = await getBannerAPI({
-    distributionSite: '2'
-  })
+    distributionSite: "2",
+  });
+  console.log(res);
+  bannerList.value = res.result;
+};
 
-  console.log('Banner数据：', res)
-
-  bannerList.value = res.result
-}
-
-// 获取分类数据
-const getCategory = async () => {
-  const res = await getTopCategoryAPI(route.params.id)
-
-  console.log('分类数据：', res)
-
-  categoryData.value = res.result
-}
-
-// 页面加载后执行
 onMounted(() => {
-  getBanner()
-  getCategory()
-})
+  getBanner();
+  console.log("这里是category");
+  getCategory();
+});
+// 这里的to对象里面有跳转到指定网址的参数和信息
+onBeforeRouteUpdate((to) => {
+  console.log("hahha路由变化了");
+  getCategory(to.params.id);
+});
 </script>
 
 <template>
   <div class="top-category">
     <div class="container m-top-20">
-
       <!-- 面包屑 -->
       <div class="bread-container">
         <el-breadcrumb separator=">">
-          <el-breadcrumb-item :to="{ path: '/' }">
-            首页
-          </el-breadcrumb-item>
-
-          <el-breadcrumb-item>
-            {{ categoryData.name }}
-          </el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>{{ categoryData.name }}</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
-
-      <!-- Banner 轮播图 -->
+      <!-- 轮播图 -->
       <div class="home-banner">
         <el-carousel height="500px">
-          <el-carousel-item
-            v-for="item in bannerList"
-            :key="item.id"
-          >
-            <img
-              :src="item.imgUrl"
-              alt=""
-            />
+          <el-carousel-item v-for="item in bannerList" :key="item.id">
+            <img :src="item.imgUrl" alt="" />
           </el-carousel-item>
         </el-carousel>
       </div>
-
-      <!-- 全部分类 -->
+      <!--  -->
       <div class="sub-list">
         <h3>全部分类</h3>
-
         <ul>
-          <li
-            v-for="item in categoryData.children"
-            :key="item.id"
-          >
+          <li v-for="i in categoryData.children" :key="i.id">
             <RouterLink to="/">
-              <img
-                :src="item.picture"
-                alt=""
-              />
-
-              <p>
-                {{ item.name }}
-              </p>
+              <img :src="i.picture" />
+              <p>{{ i.name }}</p>
             </RouterLink>
           </li>
         </ul>
       </div>
-
-      <!-- 推荐商品 -->
-      <div
-        v-for="item in categoryData.children"
-        :key="item.id"
-        class="ref-goods"
-      >
+      <div class="ref-goods" v-for="item in categoryData.children" :key="item.id">
         <div class="head">
-          <h3>
-            - {{ item.name }} -
-          </h3>
+          <h3>- {{ item.name }}-</h3>
         </div>
-
         <div class="body">
-          <GoodsItem
-            v-for="good in item.goods"
-            :key="good.id"
-            :goods="good"
-          />
+          <GoodsItem v-for="good in item.goods" :goods="good" :key="good.id" />
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-.top-category {
+// 部分代码省略
+.home-banner {
+  width: 1240px;
+  height: 500px;
+  margin: 0 auto;
 
+  img {
+    width: 100%;
+    height: 500px;
+  }
+}
+
+.top-category {
   h3 {
     font-size: 28px;
     color: #666;
@@ -135,25 +100,6 @@ onMounted(() => {
     line-height: 100px;
   }
 
-  // 面包屑
-  .bread-container {
-    padding: 25px 0;
-  }
-
-  // Banner
-  .home-banner {
-    width: 1240px;
-    height: 500px;
-    margin: 0 auto;
-
-    img {
-      width: 100%;
-      height: 500px;
-      object-fit: cover;
-    }
-  }
-
-  // 全部分类
   .sub-list {
     margin-top: 20px;
     background-color: #fff;
@@ -168,14 +114,13 @@ onMounted(() => {
         height: 160px;
 
         a {
-          display: block;
           text-align: center;
+          display: block;
           font-size: 16px;
 
           img {
             width: 100px;
             height: 100px;
-            object-fit: contain;
           }
 
           p {
@@ -190,18 +135,12 @@ onMounted(() => {
     }
   }
 
-  // 推荐商品
   .ref-goods {
-    position: relative;
-    margin-top: 20px;
     background-color: #fff;
+    margin-top: 20px;
+    position: relative;
 
     .head {
-
-      h3 {
-        margin: 0;
-      }
-
       .xtx-more {
         position: absolute;
         top: 20px;
@@ -209,12 +148,11 @@ onMounted(() => {
       }
 
       .tag {
-        position: relative;
-        top: -20px;
-
         text-align: center;
         color: #999;
         font-size: 20px;
+        position: relative;
+        top: -20px;
       }
     }
 
@@ -224,6 +162,9 @@ onMounted(() => {
       padding: 0 40px 30px;
     }
   }
+
+  .bread-container {
+    padding: 25px 0;
+  }
 }
 </style>
-```
