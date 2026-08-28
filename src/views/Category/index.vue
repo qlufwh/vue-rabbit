@@ -1,66 +1,103 @@
 <script setup>
-
 import { useBanner } from './composables/useBanner'
 import { useCategory } from './composables/useCategory'
+import GoodsItem from '../Home/components/Goodsitem.vue'
+
 const { bannerList } = useBanner()
 const { categoryData } = useCategory()
-
 </script>
+
 <template>
   <div class="top-category">
     <div class="container m-top-20">
+
       <!-- 面包屑 -->
       <div class="bread-container">
         <el-breadcrumb separator=">">
-          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item>{{ categoryData.name }}</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/' }">
+            首页
+          </el-breadcrumb-item>
+
+          <el-breadcrumb-item>
+            {{ categoryData.name }}
+          </el-breadcrumb-item>
         </el-breadcrumb>
       </div>
+
       <!-- 轮播图 -->
       <div class="home-banner">
         <el-carousel height="500px">
-          <el-carousel-item v-for="item in bannerList" :key="item.id">
-            <img :src="item.imgUrl" alt="" />
+          <el-carousel-item
+            v-for="item in bannerList"
+            :key="item.id"
+          >
+            <img
+              :src="item.imgUrl"
+              alt=""
+            />
           </el-carousel-item>
         </el-carousel>
       </div>
-      <!--  -->
+
+      <!-- 全部分类 -->
       <div class="sub-list">
         <h3>全部分类</h3>
+
         <ul>
-          <li v-for="i in categoryData.children" :key="i.id">
-            <RouterLink to="/">
-              <img :src="i.picture" />
+          <li
+            v-for="i in categoryData.children"
+            :key="i.id"
+          >
+            <RouterLink :to="`/category/sub/${i.id}`">
+              <img
+                :src="i.picture"
+                :alt="i.name"
+              />
+
               <p>{{ i.name }}</p>
             </RouterLink>
           </li>
         </ul>
       </div>
-      <div class="ref-goods" v-for="item in categoryData.children" :key="item.id">
+
+      <!-- 推荐商品 -->
+      <div
+        v-for="item in categoryData.children"
+        :key="item.id"
+        class="ref-goods"
+      >
         <div class="head">
-          <h3>- {{ item.name }}-</h3>
+          <h3>- {{ item.name }} -</h3>
         </div>
+
         <div class="body">
-          <GoodsItem v-for="good in item.goods" :goods="good" :key="good.id" />
+          <GoodsItem
+            v-for="good in item.goods"
+            :key="good.id"
+            :goods="good"
+          />
         </div>
       </div>
+
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-// 部分代码省略
+/* 轮播图 */
 .home-banner {
   width: 1240px;
   height: 500px;
   margin: 0 auto;
 
   img {
+    display: block;
     width: 100%;
     height: 500px;
   }
 }
 
+/* 分类页面 */
 .top-category {
   h3 {
     font-size: 28px;
@@ -70,6 +107,12 @@ const { categoryData } = useCategory()
     line-height: 100px;
   }
 
+  /* 面包屑 */
+  .bread-container {
+    padding: 25px 0;
+  }
+
+  /* 全部分类 */
   .sub-list {
     margin-top: 20px;
     background-color: #fff;
@@ -84,13 +127,16 @@ const { categoryData } = useCategory()
         height: 160px;
 
         a {
-          text-align: center;
           display: block;
+          text-align: center;
           font-size: 16px;
 
           img {
+            display: block;
             width: 100px;
             height: 100px;
+            margin: 0 auto;
+            object-fit: contain;
           }
 
           p {
@@ -105,6 +151,7 @@ const { categoryData } = useCategory()
     }
   }
 
+  /* 推荐商品 */
   .ref-goods {
     background-color: #fff;
     margin-top: 20px;
@@ -131,10 +178,6 @@ const { categoryData } = useCategory()
       justify-content: space-around;
       padding: 0 40px 30px;
     }
-  }
-
-  .bread-container {
-    padding: 25px 0;
   }
 }
 </style>
