@@ -15,11 +15,12 @@ const CategoryStore = useCategoryStore();
       </h1>
       <ul class="app-header-nav">
         <li class="home">
-           <RouterLink to="/">首页</RouterLink>
+          <RouterLink to="/">首页</RouterLink>
         </li>
         <!-- 遍历list中的数据，渲染列表 -->
         <li class="home" v-for="item in CategoryStore.categoryList" :key="item.id">
-          <RouterLink :to="`/category/${item.id}`">{{ item.name }}</RouterLink>
+          <!-- 这个active-class="active"的value是一个需要激活的class样式，样式写在了下面 -->
+          <RouterLink active-class="active" :to="`/category/${item.id}`">{{ item.name }}</RouterLink>
         </li>
       </ul>
       <div class="search">
@@ -59,24 +60,24 @@ const CategoryStore = useCategoryStore();
     padding-left: 40px;
     position: relative;
     z-index: 998;
-  
+
     li {
       margin-right: 40px;
       width: 38px;
       text-align: center;
-  
+
       a {
         font-size: 16px;
         line-height: 32px;
         height: 32px;
         display: inline-block;
-  
+
         &:hover {
           color: $xtxColor;
           border-bottom: 1px solid $xtxColor;
         }
       }
-  
+
       .active {
         color: $xtxColor;
         border-bottom: 1px solid $xtxColor;
