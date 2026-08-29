@@ -1,37 +1,40 @@
 import axios from 'axios'
 
-// 创建axios实例
+// 创建 axios 实例
 const httpInstance = axios.create({
-  baseURL: 'http://pcapi-xiaotuxian-front-devtest.itheima.net',
+  baseURL: '/api',
   timeout: 5000
 })
 
-//目前这两个没啥用，以后再用
-// axios请求拦截器
-httpInstance.interceptors.request.use(config => {
-  return config
-}, e => Promise.reject(e))
+// axios 请求拦截器
+httpInstance.interceptors.request.use(
+  config => {
+    return config
+  },
+  e => Promise.reject(e)
+)
 
-// axios响应式拦截器
-httpInstance.interceptors.response.use(res => res.data, e => {
-  return Promise.reject(e)
-})
-/**
- * @description: 获取新鲜好物
- * @param {*}
- * @return {*}
- */
+// axios 响应拦截器
+httpInstance.interceptors.response.use(
+  res => res.data,
+  e => {
+    return Promise.reject(e)
+  }
+)
+
+// 获取新鲜好物
 export const findNewAPI = () => {
   return httpInstance({
-    url:'/home/new'
+    url: '/home/new'
   })
 }
-/**
- * @description: 获取人气推荐
- * @param {*}
- * @return {*}
- */
+
+// 获取人气推荐
 export const getHotAPI = () => {
-  return  httpInstance('home/hot', 'get', {})
+  return httpInstance({
+    url: '/home/hot',
+    method: 'GET'
+  })
 }
+
 export default httpInstance

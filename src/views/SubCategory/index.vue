@@ -1,22 +1,50 @@
 <script setup>
-import { getCategoryFilterAPI } from '@/apis/category'
-import { categoryNames } from '@vueuse/core/metadata.mjs'
+import { getCategoryFilterAPI, getSubCategoryAPI } from '@/apis/category'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-
-const categoryData = ref({})
+import GoodsItem from '../Home/components/Goodsitem.vue'
 
 const route = useRoute()
 
+const goodList = ref([])
+
+const reqData = ref({
+    categoryId: route.params.id,
+    page: 1,
+    pageSize: 20,
+    sortField: 'publishTime'
+})
+
+const getGoodList = async () => {
+    try {
+        console.log('请求参数：', reqData.value)
+
+        const res = await getSubCategoryAPI(reqData.value)
+
+        console.log('商品接口返回：', res)
+        goodList.value = res.result.items
+
+        goodList.value = res.result.items
+    } catch (error) {
+        console.error('商品接口请求失败：', error)
+    }
+}
+
+const categoryData = ref({})
+
 const getCategoryData = async () => {
     const res = await getCategoryFilterAPI(route.params.id)
+
+    console.log('分类接口返回：', res)
+
     categoryData.value = res.result
 }
 
-onMounted(() => getCategoryData())
+onMounted(() => {
+    getGoodList()
+    getCategoryData()
+})
 </script>
-
-
 
 <template>
     <div class="container">
@@ -24,8 +52,9 @@ onMounted(() => getCategoryData())
         <div class="bread-container">
             <el-breadcrumb separator=">">
                 <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-                <el-breadcrumb-item :to="{ path:`/category/${categoryData.parentId}`}">{{categoryData.parentName }}</el-breadcrumb-item>
-                <el-breadcrumb-item>{{categoryData.name}}</el-breadcrumb-item>
+                <el-breadcrumb-item :to="{ path: `/category/${categoryData.parentId}` }">{{ categoryData.parentName
+                }}</el-breadcrumb-item>
+                <el-breadcrumb-item>{{ categoryData.name }}</el-breadcrumb-item>
             </el-breadcrumb>
         </div>
         <div class="sub-container">
@@ -36,6 +65,7 @@ onMounted(() => getCategoryData())
             </el-tabs>
             <div class="body">
                 <!-- 商品列表-->
+                 <GoodsItem v-for="goods in goodList" :goods="goods" :key="goods.id" />
             </div>
         </div>
     </div>
