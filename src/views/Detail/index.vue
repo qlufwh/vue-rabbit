@@ -3,6 +3,7 @@ import { getDetail } from '@/apis/detail'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import DetailHot from './components/DetailHot.vue'
+import ImageView from '@/components/ImageView.vue'
 const goods = ref({})
 const route = useRoute()
 const getGoods = async () => {
@@ -10,10 +11,6 @@ const getGoods = async () => {
   goods.value = res.result
 }
 onMounted(() => getGoods())
-
-
-
-
 </script>
 
 <template>
@@ -42,7 +39,7 @@ onMounted(() => getGoods())
           <div class="goods-info">
             <div class="media">
               <!-- 图片预览区 -->
-
+              <ImageView />
               <!-- 统计数量 -->
               <ul class="goods-sales">
                 <li>
@@ -125,9 +122,10 @@ onMounted(() => getGoods())
             </div>
             <!-- 24热榜+专题推荐 -->
             <div class="goods-aside">
-              <detail-hot/>
-              <detail-hot/>
-
+              <!-- 24小时热榜 -->
+              <DetailHot :type="1" />
+              <!-- 周热榜 -->
+              <DetailHot :type="2" />
             </div>
           </div>
         </div>
