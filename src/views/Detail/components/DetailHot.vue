@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from "vue";
-import { getHotGoodsAPI } from "@/apis/detail";
+import { fetchHotGoodsAPI } from "@/apis/detail";
 import { useRoute } from "vue-router";
 
 const goodList = ref([]);
@@ -14,7 +14,7 @@ const props = defineProps({
 });
 
 const getHotList = async () => {
-  const res = await getHotGoodsAPI({
+  const res = await fetchHotGoodsAPI({
     id: route.params.id,
     // 这里传入type类型，是为了传参用来区别周榜和日榜
     type: props.type,
