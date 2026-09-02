@@ -1,51 +1,53 @@
-```vue
 <script setup>
 import { ref } from 'vue'
-import { loginAPI } from '@/apis/use'
-import { ElMessage } from "element-plus";
-import "element-plus/theme-chalk/el-message.css";
-import { useRouter } from "vue-router";
-const router = useRouter();
+import { ElMessage } from 'element-plus'
+import 'element-plus/theme-chalk/el-message.css'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user.js'
+
+const router = useRouter()
+const userStore = useUserStore()
+
 // 表单数据对象
 const userInfo = ref({
-    account: '',
-    password: '',
-    agree: true
+  account: '',
+  password: '',
+  agree: true
 })
 
 // 规则数据对象
 const rules = {
-    account: [
-        {
-            required: true,
-            message: '用户名不能为空',
-            trigger: 'blur'
-        }
-    ],
+  account: [
+    {
+      required: true,
+      message: '用户名不能为空',
+      trigger: 'blur'
+    }
+  ],
 
-    password: [
-        {
-            required: true,
-            message: '密码不能为空',
-            trigger: 'blur'
-        },
-        {
-            min: 6,
-            max: 24,
-            message: '密码长度要求6-24个字符',
-            trigger: 'blur'
-        }
-    ],
+  password: [
+    {
+      required: true,
+      message: '密码不能为空',
+      trigger: 'blur'
+    },
+    {
+      min: 6,
+      max: 24,
+      message: '密码长度要求6-24个字符',
+      trigger: 'blur'
+    }
+  ],
 
-    agree: [
-        {
-            validator: (rule, val, callback) => {
-                return val
-                    ? callback()
-                    : callback(new Error('请先同意协议'))
-            }
-        }
-    ]
+  agree: [
+    {
+      validator: (rule, val, callback) => {
+        return val
+          ? callback()
+          : callback(new Error('请先同意协议'))
+      }
+    }
+  ]
 }
 
 // 获取表单实例
@@ -53,30 +55,35 @@ const formRef = ref(null)
 
 // 登录
 const doLogin = () => {
-    // 获取账户名和密码
-    const { account, password } = userInfo.value
+  const { account, password } = userInfo.value
 
-    // 表单校验
-    formRef.value.validate(async (valid) => {
-        console.log(valid)
+  // 调用表单校验
+  formRef.value.validate(async (valid) => {
+    // valid：所有表单校验通过才为 true
+    console.log(valid)
 
-        // 校验成功
-        if (valid) {
-            const res = await loginAPI({
-                account,
-                password
-            })
+    // 校验通过才执行登录
+    if (valid) {
+      // 调用 userStore 登录
+      await userStore.getUserInfo({
+        account,
+        password
+      })
 
-            console.log(res)
-            //1,提示用户
-            ElMessage({ type: "success", message: "登录成功" });
-            //2,跳转首页
-            router.replace({ path: "/" });
-        }
-    })
+      // 登录成功提示
+      ElMessage({
+        type: 'success',
+        message: '登录成功'
+      })
+
+      // 跳转首页
+      router.replace({
+        path: '/'
+      })
+    }
+  })
 }
 </script>
-```
 
 
 <template>
