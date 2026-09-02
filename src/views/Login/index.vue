@@ -1,6 +1,82 @@
+```vue
 <script setup>
+import { ref } from 'vue'
+import { loginAPI } from '@/apis/use'
+import { ElMessage } from "element-plus";
+import "element-plus/theme-chalk/el-message.css";
+import { useRouter } from "vue-router";
+const router = useRouter();
+// 表单数据对象
+const userInfo = ref({
+    account: '',
+    password: '',
+    agree: true
+})
 
+// 规则数据对象
+const rules = {
+    account: [
+        {
+            required: true,
+            message: '用户名不能为空',
+            trigger: 'blur'
+        }
+    ],
+
+    password: [
+        {
+            required: true,
+            message: '密码不能为空',
+            trigger: 'blur'
+        },
+        {
+            min: 6,
+            max: 24,
+            message: '密码长度要求6-24个字符',
+            trigger: 'blur'
+        }
+    ],
+
+    agree: [
+        {
+            validator: (rule, val, callback) => {
+                return val
+                    ? callback()
+                    : callback(new Error('请先同意协议'))
+            }
+        }
+    ]
+}
+
+// 获取表单实例
+const formRef = ref(null)
+
+// 登录
+const doLogin = () => {
+    // 获取账户名和密码
+    const { account, password } = userInfo.value
+
+    // 表单校验
+    formRef.value.validate(async (valid) => {
+        console.log(valid)
+
+        // 校验成功
+        if (valid) {
+            const res = await loginAPI({
+                account,
+                password
+            })
+
+            console.log(res)
+            //1,提示用户
+            ElMessage({ type: "success", message: "登录成功" });
+            //2,跳转首页
+            router.replace({ path: "/" });
+        }
+    })
+}
 </script>
+```
 
 
 <template>
@@ -10,6 +86,7 @@
                 <h1 class="logo">
                     <RouterLink to="/">小兔鲜</RouterLink>
                 </h1>
+
                 <RouterLink class="entry" to="/">
                     进入网站首页
                     <i class="iconfont icon-angle-right"></i>
@@ -17,26 +94,33 @@
                 </RouterLink>
             </div>
         </header>
+
         <section class="login-section">
             <div class="wrapper">
                 <nav>
                     <a href="javascript:;">账户登录</a>
                 </nav>
+
                 <div class="account-box">
                     <div class="form">
-                        <el-form label-position="right" label-width="60px" status-icon>
-                            <el-form-item label="账户">
-                                <el-input />
+                        <el-form ref="formRef" :model="userInfo" :rules="rules" status-icon>
+                            <el-form-item prop="account" label="账户">
+                                <el-input v-model="userInfo.account" />
                             </el-form-item>
-                            <el-form-item label="密码">
-                                <el-input />
+
+                            <el-form-item prop="password" label="密码">
+                                <el-input v-model="userInfo.password" type="password" />
                             </el-form-item>
-                            <el-form-item label-width="22px">
-                                <el-checkbox size="large">
+
+                            <el-form-item prop="agree" label-width="22px">
+                                <el-checkbox v-model="userInfo.agree" size="large">
                                     我已同意隐私条款和服务条款
                                 </el-checkbox>
                             </el-form-item>
-                            <el-button size="large" class="subBtn">点击登录</el-button>
+
+                            <el-button size="large" class="subBtn" @click="doLogin">
+                                点击登录
+                            </el-button>
                         </el-form>
                     </div>
                 </div>
@@ -54,6 +138,7 @@
                     <a href="javascript:;">搜索推荐</a>
                     <a href="javascript:;">友情链接</a>
                 </p>
+
                 <p>CopyRight &copy; 小兔鲜儿</p>
             </div>
         </footer>
