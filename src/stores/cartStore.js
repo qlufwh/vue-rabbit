@@ -29,7 +29,6 @@ export const useCartStore = defineStore('cart', () => {
     const idx = cartList.value.findIndex((item) => item.skuId === skuId)
     cartList.value.splice(idx, 1)
   }
-
   return {
     cartList,
     addCart,
