@@ -31,10 +31,12 @@ const countChange = (val) => {
 const addCart = () => {
   if(skuInfo.value.skuId){
     //规格已经选择 触发action
+    // 从skus中找到当前选中sku的图片
+    const sku = goods.value.skus.find(sku => sku.id === skuInfo.value.skuId)
     cartStore.addCart({
       id: goods.value.id,
       name: goods.value.name,
-      picture: goods.value.picture,
+      picture: sku.picture,
       price: goods.value.price,
       count:count.value,
       skuId: skuInfo.value.skuId,

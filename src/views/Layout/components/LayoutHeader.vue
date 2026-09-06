@@ -1,37 +1,48 @@
 <script setup>
 
-import { useCategoryStore } from '@/stores/category';
+import { useCategoryStore } from '@/stores/category'
+import HeaderCart from './HeaderCart.vue'
 
-
-const CategoryStore = useCategoryStore();
+const categoryStore = useCategoryStore()
 
 </script>
 
 <template>
+
   <header class="app-header">
     <div class="container">
+
       <h1 class="logo">
         <RouterLink to="/">小兔鲜</RouterLink>
       </h1>
+
       <ul class="app-header-nav">
+
         <li class="home">
           <RouterLink to="/">首页</RouterLink>
         </li>
-        <!-- 遍历list中的数据，渲染列表 -->
-        <li class="home" v-for="item in CategoryStore.categoryList" :key="item.id">
-          <!-- 这个active-class="active"的value是一个需要激活的class样式，样式写在了下面 -->
-          <RouterLink active-class="active" :to="`/category/${item.id}`">{{ item.name }}</RouterLink>
+
+        <!-- 遍历分类数据 -->
+        <li class="home" v-for="item in categoryStore.categoryList" :key="item.id">
+          <RouterLink active-class="active" :to="`/category/${item.id}`">
+            {{ item.name }}
+          </RouterLink>
         </li>
+
       </ul>
+
       <div class="search">
         <i class="iconfont icon-search"></i>
         <input type="text" placeholder="搜一搜" />
       </div>
+
       <!-- 头部购物车 -->
+      <HeaderCart />
+
     </div>
   </header>
-</template>
 
+</template>
 
 <style scoped lang='scss'>
 .app-header {
