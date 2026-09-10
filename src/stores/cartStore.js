@@ -34,16 +34,33 @@ export const useCartStore = defineStore('cart', () => {
     // 通过skuId找到要修改的那一项 然后把它的selected修改为传过来的selected
     const item = cartList.value.find((item) => item.skuId === skuId)
     item.selected = selected
+  }// 全选功能action
+  const allCheck = (selected) => {
+    // 把cartList中的每一项的selected都设置为当前的全选框状态
+    cartList.value.forEach(item => item.selected = selected)
   }
+
+
+  // 是否全选计算属性
+  const isAll = computed(() => cartList.value.every((item) => item.selected))
   // 计算属性 - 总数量
   const allCount = computed(() => cartList.value.reduce((a, c) => a + c.count, 0))
   // 计算属性 - 总价
   const allPrice = computed(() => cartList.value.reduce((a, c) => a + c.count * c.price, 0))
+
+  //3已选择数量
+  const selectedCount = computed(() => cartList.value.filter(item => item.selected).reduce((a, c) => a + c.count, 0))
+  //4已选择商品价钱合计
+  const selectedPrice = computed(() => cartList.value.filter(item => item.selected).reduce((a, c) => a + c.count * c.price, 0))
   return {
     cartList,
     addCart,
     delCart,
     singleCheck,
+    allCheck,
+    selectedCount,
+    selectedPrice,
+    isAll,
     allCount,
     allPrice
   }

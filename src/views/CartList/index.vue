@@ -8,6 +8,9 @@ const singleCheck = (i, selected) => {
   // 除了selected补充一个用来筛选的参数 - skuId
   cartStore.singleCheck(i.skuId, selected)
 }
+const allCheck = (selected) => {
+  cartStore.allCheck(selected)
+}
 </script>
 
 <template>
@@ -18,7 +21,7 @@ const singleCheck = (i, selected) => {
           <thead>
             <tr>
               <th width="120">
-                <el-checkbox />
+                <el-checkbox :model-value="cartStore.isAll" @change="allCheck" />
               </th>
               <th width="400">商品信息</th>
               <th width="220">单价</th>
@@ -33,6 +36,7 @@ const singleCheck = (i, selected) => {
               <td>
                 <!-- 单选框 -->
                 <el-checkbox :model-value="i.selected" @change="(selected) => singleCheck(i, selected)" />
+
               </td>
               <td>
                 <div class="goods">
@@ -79,11 +83,11 @@ const singleCheck = (i, selected) => {
       <!-- 操作栏 -->
       <div class="action">
         <div class="batch">
-          共 10 件商品，已选择 2 件，商品合计：
-          <span class="red">¥ 200.00 </span>
+          共{{ cartStore.allCount }} 件商品，已选择 {{cartStore.selectedCount}}件,商品合计:
+          <span class = "red">{{ cartStore.selectedPrice.toFixed(2) }}元</span>
         </div>
         <div class="total">
-          <el-button size="large" type="primary" >下单结算</el-button>
+          <el-button size="large" type="primary">下单结算</el-button>
         </div>
       </div>
     </div>
