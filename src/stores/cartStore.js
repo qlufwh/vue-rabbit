@@ -3,67 +3,74 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useUserStore } from './user'
-import { insertCartAPI, findNewCartListAPI } from '@/apis/cart'
+import { insertCartAPI, findNewCartListAPI, delCartAPI } from '@/apis/cart'
 
 export const useCartStore = defineStore('cart', () => {
   const userStore = useUserStore()
-  const isLogin = computed(() => userStore.userInfo.token)
-  // 1. 定义state - cartList
+  const isLogin = computed(() => Boolean(userStore.userInfo.token))
   const cartList = ref([])
-  // 2. 定义action - addCart
 
+  // 登录状态下，每次写操作后都从服务端同步最新购物车。
+  const refreshCartList = async () => {
+    const { result } = await findNewCartListAPI()
+    cartList.value = result
+  }
+
+  // 添加商品：登录后操作服务端，未登录时维护本地持久化数据。
   const addCart = async (goods) => {
     const { skuId, count } = goods
     if (isLogin.value) {
-      // 登录之后的加入购物车逻辑
       await insertCartAPI({ skuId, count })
-      const res = await findNewCartListAPI()
-      cartList.value = res.result
-    } else {
-      // 添加购物车操作
-      // 已添加过 - count + 1
-      // 没有添加过 - 直接push
-      // 思路：通过匹配传递过来的商品对象中的skuId能不能在cartList中找到，找到了就是添加过
-      const item = cartList.value.find((item) => goods.skuId === item.skuId)
-      if (item) {
-        // 找到了
-        item.count++
-      } else {
-        // 没找到
-        cartList.value.push(goods)
-      }
+      await refreshCartList()
+      return
     }
-  }
 
-  // 3. 定义action - delCart
-  const delCart = (skuId) => {
-    // 通过skuId找到对应的购物车商品，然后从cartList中移除
-    const idx = cartList.value.findIndex((item) => item.skuId === skuId)
-    cartList.value.splice(idx, 1)
-  }
-  // 单选功能
-  const singleCheck = (skuId, selected) => {
-    // 通过skuId找到要修改的那一项 然后把它的selected修改为传过来的selected
     const item = cartList.value.find((item) => item.skuId === skuId)
-    item.selected = selected
-  }// 全选功能action
-  const allCheck = (selected) => {
-    // 把cartList中的每一项的selected都设置为当前的全选框状态
-    cartList.value.forEach(item => item.selected = selected)
+    if (item) {
+      item.count += count
+      return
+    }
+
+    cartList.value.push(goods)
   }
 
+  // 根据 SKU 删除商品，避免不同规格的同一商品互相影响。
+  const delCart = async (skuId) => {
+    if (isLogin.value) {
+      await delCartAPI([skuId])
+      await refreshCartList()
+      return
+    }
 
-  // 是否全选计算属性
-  const isAll = computed(() => cartList.value.every((item) => item.selected))
-  // 计算属性 - 总数量
+    cartList.value = cartList.value.filter((item) => item.skuId !== skuId)
+  }
+
+  // 更新单个商品的选中状态。
+  const singleCheck = (skuId, selected) => {
+    const item = cartList.value.find((item) => item.skuId === skuId)
+    if (item) item.selected = selected
+  }
+
+  // 将所有商品同步为全选框的当前状态。
+  const allCheck = (selected) => {
+    cartList.value.forEach((item) => {
+      item.selected = selected
+    })
+  }
+
+  // 空购物车不应显示为全选。
+  const isAll = computed(() => cartList.value.length > 0 && cartList.value.every((item) => item.selected))
   const allCount = computed(() => cartList.value.reduce((a, c) => a + c.count, 0))
-  // 计算属性 - 总价
   const allPrice = computed(() => cartList.value.reduce((a, c) => a + c.count * c.price, 0))
 
-  //3已选择数量
-  const selectedCount = computed(() => cartList.value.filter(item => item.selected).reduce((a, c) => a + c.count, 0))
-  //4已选择商品价钱合计
-  const selectedPrice = computed(() => cartList.value.filter(item => item.selected).reduce((a, c) => a + c.count * c.price, 0))
+  // 复用选中商品集合，避免数量和金额统计重复筛选购物车。
+  const selectedItems = computed(() => cartList.value.filter((item) => item.selected))
+  const selectedCount = computed(() => selectedItems.value.reduce((total, item) => total + item.count, 0))
+  const selectedPrice = computed(() => selectedItems.value.reduce(
+    (total, item) => total + item.count * item.price,
+    0
+  ))
+
   return {
     cartList,
     addCart,

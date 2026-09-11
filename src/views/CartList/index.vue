@@ -1,16 +1,11 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore'
+
+defineOptions({
+  name: 'CartList'
+})
+
 const cartStore = useCartStore()
-// 单选回调
-const singleCheck = (i, selected) => {
-  console.log(i, selected)
-  // store cartList 数组 无法知道要修改谁的选中状态？
-  // 除了selected补充一个用来筛选的参数 - skuId
-  cartStore.singleCheck(i.skuId, selected)
-}
-const allCheck = (selected) => {
-  cartStore.allCheck(selected)
-}
 </script>
 
 <template>
@@ -21,7 +16,8 @@ const allCheck = (selected) => {
           <thead>
             <tr>
               <th width="120">
-                <el-checkbox :model-value="cartStore.isAll" @change="allCheck" />
+                <!-- 全选状态由购物车数据自动计算，切换时统一更新所有商品 -->
+                <el-checkbox :model-value="cartStore.isAll" @change="cartStore.allCheck" />
               </th>
               <th width="400">商品信息</th>
               <th width="220">单价</th>
@@ -32,34 +28,42 @@ const allCheck = (selected) => {
           </thead>
           <!-- 商品列表 -->
           <tbody>
-            <tr v-for="i in cartStore.cartList" :key="i.id">
+            <tr v-for="item in cartStore.cartList" :key="item.skuId">
               <td>
-                <!-- 单选框 -->
-                <el-checkbox :model-value="i.selected" @change="(selected) => singleCheck(i, selected)" />
-
+                <el-checkbox
+                  :model-value="item.selected"
+                  @change="(selected) => cartStore.singleCheck(item.skuId, selected)"
+                />
               </td>
               <td>
                 <div class="goods">
-                  <RouterLink to="/"><img :src="i.picture" alt="" /></RouterLink>
+                  <RouterLink :to="`/detail/${item.id}`">
+                    <img :src="item.picture" :alt="item.name" />
+                  </RouterLink>
                   <div>
                     <p class="name ellipsis">
-                      {{ i.name }}
+                      {{ item.name }}
                     </p>
                   </div>
                 </div>
               </td>
               <td class="tc">
-                <p>&yen;{{ i.price }}</p>
+                <p>&yen;{{ item.price }}</p>
               </td>
               <td class="tc">
-                <el-input-number v-model="i.count" />
+                <el-input-number v-model="item.count" :min="1" />
               </td>
               <td class="tc">
-                <p class="f16 red">&yen;{{ (i.price * i.count).toFixed(2) }}</p>
+                <p class="f16 red">&yen;{{ (item.price * item.count).toFixed(2) }}</p>
               </td>
               <td class="tc">
                 <p>
-                  <el-popconfirm title="确认删除吗?" confirm-button-text="确认" cancel-button-text="取消" @confirm="delCart(i)">
+                  <el-popconfirm
+                    title="确认删除吗?"
+                    confirm-button-text="确认"
+                    cancel-button-text="取消"
+                    @confirm="cartStore.delCart(item.skuId)"
+                  >
                     <template #reference>
                       <a href="javascript:;">删除</a>
                     </template>
@@ -83,8 +87,8 @@ const allCheck = (selected) => {
       <!-- 操作栏 -->
       <div class="action">
         <div class="batch">
-          共{{ cartStore.allCount }} 件商品，已选择 {{cartStore.selectedCount}}件,商品合计:
-          <span class = "red">{{ cartStore.selectedPrice.toFixed(2) }}元</span>
+          共 {{ cartStore.allCount }} 件商品，已选择 {{ cartStore.selectedCount }} 件，商品合计：
+          <span class="red">{{ cartStore.selectedPrice.toFixed(2) }} 元</span>
         </div>
         <div class="total">
           <el-button size="large" type="primary">下单结算</el-button>
