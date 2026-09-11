@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useUserStore } from './user'
+import { useUserStore } from './userStore'
 import { insertCartAPI, findNewCartListAPI, delCartAPI } from '@/apis/cart'
 
 export const useCartStore = defineStore('cart', () => {
@@ -44,7 +44,10 @@ export const useCartStore = defineStore('cart', () => {
 
     cartList.value = cartList.value.filter((item) => item.skuId !== skuId)
   }
-
+  //退出时清除购物车
+  const clearCart = () => {
+    cartList.value = []
+  }
   // 更新单个商品的选中状态。
   const singleCheck = (skuId, selected) => {
     const item = cartList.value.find((item) => item.skuId === skuId)
@@ -77,6 +80,7 @@ export const useCartStore = defineStore('cart', () => {
     delCart,
     singleCheck,
     allCheck,
+    clearCart,
     selectedCount,
     selectedPrice,
     isAll,

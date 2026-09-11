@@ -6,7 +6,7 @@ const cartstore = useCartStore()
 <template>
     <div class="cart">
         <a class="curr" href="javascript:;">
-            <i class="iconfont icon-cart"></i><em>2</em>
+            <i class="iconfont icon-cart"></i><em>{{ cartstore.allCount }}</em>
         </a>
         <div class="layer">
             <div class="list">
