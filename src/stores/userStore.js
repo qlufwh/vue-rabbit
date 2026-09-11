@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { loginAPI } from '@/apis/userStore'
 import { useCartStore } from './cartStore'
+import { mergeCartAPI } from '@/apis/cart'
 
 export const useUserStore = defineStore('user', () => {
   const cartStore = useCartStore()
@@ -13,6 +14,15 @@ export const useUserStore = defineStore('user', () => {
   const getUserInfo = async ({ account, password }) => {
     const res = await loginAPI({ account, password })
     userInfo.value = res.result
+
+    // 登录成功后，将本地购物车转换为接口需要的数据并合并到服务器。
+    const localCartList = cartStore.cartList.map(({ skuId, count, selected }) => ({
+      skuId,
+      count,
+      selected
+    }))
+    await mergeCartAPI(localCartList)
+    await cartStore.refreshCartList()
   }
   //退出时清除用户信息
   const clearUserInfo = ()=>{

@@ -6,9 +6,10 @@ import { useUserStore } from './userStore'
 import { insertCartAPI, findNewCartListAPI, delCartAPI } from '@/apis/cart'
 
 export const useCartStore = defineStore('cart', () => {
-  const userStore = useUserStore()
-  const isLogin = computed(() => Boolean(userStore.userInfo.token))
   const cartList = ref([])
+
+  // 使用时再获取用户仓库，避免用户仓库与购物车仓库循环初始化。
+  const isLogin = () => Boolean(useUserStore().userInfo.token)
 
   // 登录状态下，每次写操作后都从服务端同步最新购物车。
   const refreshCartList = async () => {
@@ -19,7 +20,7 @@ export const useCartStore = defineStore('cart', () => {
   // 添加商品：登录后操作服务端，未登录时维护本地持久化数据。
   const addCart = async (goods) => {
     const { skuId, count } = goods
-    if (isLogin.value) {
+    if (isLogin()) {
       await insertCartAPI({ skuId, count })
       await refreshCartList()
       return
@@ -36,7 +37,7 @@ export const useCartStore = defineStore('cart', () => {
 
   // 根据 SKU 删除商品，避免不同规格的同一商品互相影响。
   const delCart = async (skuId) => {
-    if (isLogin.value) {
+    if (isLogin()) {
       await delCartAPI([skuId])
       await refreshCartList()
       return
@@ -78,6 +79,7 @@ export const useCartStore = defineStore('cart', () => {
     cartList,
     addCart,
     delCart,
+    refreshCartList,
     singleCheck,
     allCheck,
     clearCart,
