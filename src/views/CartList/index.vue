@@ -1,11 +1,24 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 defineOptions({
   name: 'CartList'
 })
 
 const cartStore = useCartStore()
+const router = useRouter()
+
+const goCheckout = async () => {
+  if (cartStore.selectedCount === 0) {
+    ElMessage.warning('请先勾选要结算的商品')
+    return
+  }
+  // 先同步勾选状态到服务端，再进入结算页
+  await cartStore.syncCartToServer()
+  router.push('/checkout')
+}
 </script>
 
 <template>
@@ -51,7 +64,11 @@ const cartStore = useCartStore()
                 <p>&yen;{{ item.price }}</p>
               </td>
               <td class="tc">
-                <el-input-number v-model="item.count" :min="1" />
+                <el-input-number
+                  :model-value="item.count"
+                  :min="1"
+                  @change="(count) => cartStore.updateCount(item.skuId, count)"
+                />
               </td>
               <td class="tc">
                 <p class="f16 red">&yen;{{ (item.price * item.count).toFixed(2) }}</p>
@@ -91,7 +108,7 @@ const cartStore = useCartStore()
           <span class="red">{{ cartStore.selectedPrice.toFixed(2) }} 元</span>
         </div>
         <div class="total">
-          <el-button size="large" type="primary">下单结算</el-button>
+          <el-button size="large" type="primary" @click="goCheckout">下单结算</el-button>
         </div>
       </div>
     </div>

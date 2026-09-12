@@ -24,24 +24,46 @@ httpInstance.interceptors.request.use(
   e => Promise.reject(e)
 )
 
+// 避免多个接口同时 401 时重复跳转/刷新
+let handlingAuthError = false
+
 // axios 响应拦截器
 httpInstance.interceptors.response.use(
-  
   res => res.data,
   e => {
     const useStore = useUserStore()
-    //统一错误提示
-    ElMessage({
-      type: "warning",
-      message: e.response.data.message,
-    });
-    //401token失效处理
-    //1.清除本地用户数据
-    //2.跳转到登录页
-    if(e.response.status === 401){
+    const resData = e.response?.data
+    const isTokenInvalid =
+      e.response?.status === 401 ||
+      resData?.code === '10019' ||
+      resData?.code === 10019
+
+    if (isTokenInvalid) {
+      if (!handlingAuthError) {
+        handlingAuthError = true
         useStore.clearUserInfo()
-        router.push('/login')
+
+        const path = router.currentRoute.value.path
+        // 结算等需登录页：去登录；其余公共页清掉坏 token 后刷新，避免首页无数据/无图片
+        if (path === '/checkout' || path === '/cartlist') {
+          ElMessage({ type: 'warning', message: '登录状态已失效，请重新登录' })
+          router.push({
+            path: '/login',
+            query: { redirect: router.currentRoute.value.fullPath }
+          })
+        } else if (path !== '/login') {
+          ElMessage({ type: 'warning', message: '登录状态已失效，正在刷新页面' })
+          window.location.reload()
+        }
+      }
+      return Promise.reject(e)
     }
+
+    // 统一处理其他接口错误。
+    ElMessage({
+      type: 'warning',
+      message: resData?.message || '请求失败，请稍后重试'
+    })
     return Promise.reject(e)
   }
 )

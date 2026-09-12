@@ -3,7 +3,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useUserStore } from './userStore'
-import { insertCartAPI, findNewCartListAPI, delCartAPI } from '@/apis/cart'
+import {
+  insertCartAPI,
+  findNewCartListAPI,
+  delCartAPI,
+  updateCartAPI,
+  checkAllCartAPI
+} from '@/apis/cart'
 
 export const useCartStore = defineStore('cart', () => {
   const cartList = ref([])
@@ -49,17 +55,48 @@ export const useCartStore = defineStore('cart', () => {
   const clearCart = () => {
     cartList.value = []
   }
-  // 更新单个商品的选中状态。
-  const singleCheck = (skuId, selected) => {
+
+  // 更新单个商品的选中状态（登录后同步服务端，结算页才能读到已选商品）
+  const singleCheck = async (skuId, selected) => {
     const item = cartList.value.find((item) => item.skuId === skuId)
-    if (item) item.selected = selected
+    if (!item) return
+    item.selected = selected
+    if (isLogin()) {
+      await updateCartAPI(skuId, { selected, count: item.count })
+    }
   }
 
   // 将所有商品同步为全选框的当前状态。
-  const allCheck = (selected) => {
+  const allCheck = async (selected) => {
     cartList.value.forEach((item) => {
       item.selected = selected
     })
+    if (isLogin()) {
+      await checkAllCartAPI({
+        selected,
+        ids: cartList.value.map((item) => item.skuId)
+      })
+    }
+  }
+
+  // 修改商品数量（登录后同步服务端）
+  const updateCount = async (skuId, count) => {
+    const item = cartList.value.find((item) => item.skuId === skuId)
+    if (!item) return
+    item.count = count
+    if (isLogin()) {
+      await updateCartAPI(skuId, { count, selected: item.selected })
+    }
+  }
+
+  // 下单前把本地勾选/数量全部同步到服务端，保证结算金额一致
+  const syncCartToServer = async () => {
+    if (!isLogin()) return
+    await Promise.all(
+      cartList.value.map((item) =>
+        updateCartAPI(item.skuId, { selected: item.selected, count: item.count })
+      )
+    )
   }
 
   // 空购物车不应显示为全选。
@@ -82,6 +119,8 @@ export const useCartStore = defineStore('cart', () => {
     refreshCartList,
     singleCheck,
     allCheck,
+    updateCount,
+    syncCartToServer,
     clearCart,
     selectedCount,
     selectedPrice,

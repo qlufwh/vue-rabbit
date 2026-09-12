@@ -35,3 +35,24 @@ export const mergeCartAPI = (data) => {
     data
   })
 }
+
+// 修改购物车单品（选中状态 / 数量）
+export const updateCartAPI = (skuId, data) => {
+  return request({
+    url: `/member/cart/${skuId}`,
+    method: 'PUT',
+    data
+  })
+}
+
+// 购物车全选 / 取消全选
+export const checkAllCartAPI = ({ selected, ids }) => {
+  return request({
+    url: '/member/cart/selected',
+    method: 'PUT',
+    data: {
+      selected,
+      ids
+    }
+  })
+}
