@@ -1,9 +1,10 @@
 <script setup>
-import { getCheckInfoAPI } from '@/apis/checkout'
+import { getCheckInfoAPI, addAddressAPI, createOrderAPI } from '@/apis/checkout'
 import { useCartStore } from '@/stores/cartStore'
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { regionData, codeToText } from 'element-china-area-data'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -55,8 +56,111 @@ const getCheckInfo = async () => {
   const item = checkInfo.value.userAddresses.find(item => item.isDefault === 1)
   curAddress.value = item
 }
-
+// 切换地址
+const activeAddress = ref({})
+const switchAddress = (item) => {
+  activeAddress.value = item
+}
+const confirm = () => {
+  curAddress.value = activeAddress.value
+  showDialog.value = false
+}
+const cancel = () => {
+  showDialog.value = false
+}
 onMounted(() => getCheckInfo())
+const showDialog = ref(false)
+
+// 添加地址
+const addFlag = ref(false)
+const region = ref([])
+const getEmptyForm = () => ({
+  receiver: '',
+  contact: '',
+  provinceCode: '',
+  cityCode: '',
+  countyCode: '',
+  address: '',
+  postalCode: '',
+  addressTags: '',
+  isDefault: 0,
+  fullLocation: ''
+})
+const addressForm = ref(getEmptyForm())
+
+const padAreaCode = (code = '') => String(code).padEnd(6, '0')
+
+const changeRegion = (val) => {
+  if (!val || val.length < 3) return
+  addressForm.value.provinceCode = padAreaCode(val[0])
+  addressForm.value.cityCode = padAreaCode(val[1])
+  addressForm.value.countyCode = padAreaCode(val[2])
+  addressForm.value.fullLocation = `${codeToText[val[0]]} ${codeToText[val[1]]} ${codeToText[val[2]]}`
+}
+
+const openAddAddress = () => {
+  addressForm.value = getEmptyForm()
+  region.value = []
+  addFlag.value = true
+}
+
+const confirmAdd = async () => {
+  const form = addressForm.value
+  if (!form.receiver || !form.contact || !form.provinceCode || !form.address) {
+    ElMessage.warning('请完善收货地址信息')
+    return
+  }
+  const payload = {
+    ...form,
+    postalCode: form.postalCode || '000000',
+    addressTags: form.addressTags || '家'
+  }
+  const res = await addAddressAPI(payload)
+  const newAddress = { ...payload, id: res.result.id }
+  if (!checkInfo.value.userAddresses) {
+    checkInfo.value.userAddresses = []
+  }
+  checkInfo.value.userAddresses.push(newAddress)
+  curAddress.value = newAddress
+  addFlag.value = false
+  ElMessage.success('添加收货地址成功')
+}
+
+// 配送时间 / 支付方式
+const deliveryTimeType = ref(1)
+const payType = ref(1)
+
+// 创建订单
+const createOrder = async () => {
+  if (!curAddress.value?.id) {
+    ElMessage.warning('请选择收货地址')
+    return
+  }
+  if (!checkInfo.value.goods?.length) {
+    ElMessage.warning('没有可结算的商品')
+    return
+  }
+  const res = await createOrderAPI({
+    deliveryTimeType: deliveryTimeType.value,
+    payType: payType.value,
+    payChannel: 1,
+    buyerMessage: '',
+    goods: checkInfo.value.goods.map(item => {
+      return {
+        skuId: item.skuId,
+        count: item.count
+      }
+    }),
+    addressId: curAddress.value.id
+  })
+  const orderId = res.result.id
+  router.push({
+    path: '/pay',
+    query: {
+      id: orderId
+    }
+  })
+}
 </script>
 
 <template>
@@ -76,8 +180,8 @@ onMounted(() => getCheckInfo())
               </ul>
             </div>
             <div class="action">
-              <el-button size="large" @click="toggleFlag = true">切换地址</el-button>
-              <el-button size="large" @click="addFlag = true">添加地址</el-button>
+              <el-button size="large" @click="showDialog = true">切换地址</el-button>
+              <el-button size="large" @click="openAddAddress">添加地址</el-button>
             </div>
           </div>
         </div>
@@ -116,15 +220,40 @@ onMounted(() => getCheckInfo())
         <!-- 配送时间 -->
         <h3 class="box-title">配送时间</h3>
         <div class="box-body">
-          <a class="my-btn active" href="javascript:;">不限送货时间：周一至周日</a>
-          <a class="my-btn" href="javascript:;">工作日送货：周一至周五</a>
-          <a class="my-btn" href="javascript:;">双休日、假日送货：周六至周日</a>
+          <a
+            class="my-btn"
+            :class="{ active: deliveryTimeType === 1 }"
+            href="javascript:;"
+            @click="deliveryTimeType = 1"
+          >不限送货时间：周一至周日</a>
+          <a
+            class="my-btn"
+            :class="{ active: deliveryTimeType === 2 }"
+            href="javascript:;"
+            @click="deliveryTimeType = 2"
+          >工作日送货：周一至周五</a>
+          <a
+            class="my-btn"
+            :class="{ active: deliveryTimeType === 3 }"
+            href="javascript:;"
+            @click="deliveryTimeType = 3"
+          >双休日、假日送货：周六至周日</a>
         </div>
         <!-- 支付方式 -->
         <h3 class="box-title">支付方式</h3>
         <div class="box-body">
-          <a class="my-btn active" href="javascript:;">在线支付</a>
-          <a class="my-btn" href="javascript:;">货到付款</a>
+          <a
+            class="my-btn"
+            :class="{ active: payType === 1 }"
+            href="javascript:;"
+            @click="payType = 1"
+          >在线支付</a>
+          <a
+            class="my-btn"
+            :class="{ active: payType === 2 }"
+            href="javascript:;"
+            @click="payType = 2"
+          >货到付款</a>
           <span style="color:#999">货到付款需付5元手续费</span>
         </div>
         <!-- 金额明细 -->
@@ -151,13 +280,73 @@ onMounted(() => getCheckInfo())
         </div>
         <!-- 提交订单 -->
         <div class="submit">
-          <el-button type="primary" size="large">提交订单</el-button>
+          <el-button @click="createOrder" type="primary" size="large">提交订单</el-button>
         </div>
       </div>
     </div>
   </div>
   <!-- 切换地址 -->
+  <el-dialog v-model="showDialog" title="切换收货地址" width="30%" center>
+    <div class="addressWrapper">
+      <div
+        class="text item"
+        :class="{ active: activeAddress.id === item.id }"
+        @click="switchAddress(item)"
+        v-for="item in checkInfo.userAddresses"
+        :key="item.id"
+      >
+        <ul>
+          <li><span>收<i />货<i />人：</span>{{ item.receiver }} </li>
+          <li><span>联系方式：</span>{{ item.contact }}</li>
+          <li><span>收货地址：</span>{{ item.fullLocation + item.address }}</li>
+        </ul>
+      </div>
+    </div>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="cancel">取消</el-button>
+        <el-button type="primary" @click="confirm">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
   <!-- 添加地址 -->
+  <el-dialog v-model="addFlag" title="添加收货地址" width="600px" center>
+    <el-form :model="addressForm" label-width="100px">
+      <el-form-item label="收货人">
+        <el-input v-model="addressForm.receiver" placeholder="请输入收货人" />
+      </el-form-item>
+      <el-form-item label="手机号">
+        <el-input v-model="addressForm.contact" placeholder="请输入手机号" />
+      </el-form-item>
+      <el-form-item label="所在地区">
+        <el-cascader
+          v-model="region"
+          :options="regionData"
+          placeholder="请选择所在地区"
+          style="width: 100%"
+          @change="changeRegion"
+        />
+      </el-form-item>
+      <el-form-item label="详细地址">
+        <el-input v-model="addressForm.address" placeholder="请输入详细地址" />
+      </el-form-item>
+      <el-form-item label="邮政编码">
+        <el-input v-model="addressForm.postalCode" placeholder="请输入邮政编码" />
+      </el-form-item>
+      <el-form-item label="地址标签">
+        <el-input v-model="addressForm.addressTags" placeholder="请输入地址标签，逗号分隔" />
+      </el-form-item>
+      <el-form-item label="默认地址">
+        <el-switch v-model="addressForm.isDefault" :active-value="1" :inactive-value="0" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="addFlag = false">取消</el-button>
+        <el-button type="primary" @click="confirmAdd">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped lang="scss">

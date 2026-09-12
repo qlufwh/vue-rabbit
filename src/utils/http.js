@@ -45,7 +45,7 @@ httpInstance.interceptors.response.use(
 
         const path = router.currentRoute.value.path
         // 结算等需登录页：去登录；其余公共页清掉坏 token 后刷新，避免首页无数据/无图片
-        if (path === '/checkout' || path === '/cartlist') {
+        if (path === '/checkout' || path === '/cartlist' || path.startsWith('/member') || path === '/pay' || path === '/paycallback') {
           ElMessage({ type: 'warning', message: '登录状态已失效，请重新登录' })
           router.push({
             path: '/login',
